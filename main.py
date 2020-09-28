@@ -7,6 +7,7 @@ from dash.exceptions import PreventUpdate
 import json
 import io
 import base64
+import time
 
 app = dash.Dash(__name__)
 
@@ -26,7 +27,10 @@ app.layout = html.Div([
             dcc.Upload(
                 id='upload-data',
                 children=html.Button(children='Upload File')),
-            html.P(id='display-file-name',style={'margin-top':'3px','color':'green'})
+            dcc.Loading(
+                id='upload-loading',
+                children=html.P(id='display-file-name',style={'margin-top':'3px','color':'green'})
+            )
         ],
         className='step1_block'
     ),
@@ -34,9 +38,8 @@ app.layout = html.Div([
         id='step2-text',
         className='step2_block'
     ),
-    html.Div(
-        id='filtering',
-        className='search_bar'
+    dcc.Loading(
+        children=html.Div(id='filtering',className='search_bar'),
     ),
     html.Div(
         id='filtered-queries',

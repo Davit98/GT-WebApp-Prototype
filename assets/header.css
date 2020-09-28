@@ -29,6 +29,7 @@
   margin-bottom: 50px;
   height: 200px;
   overflow-y:scroll;
+  width: 50%;
 }
 
 h1.title {
