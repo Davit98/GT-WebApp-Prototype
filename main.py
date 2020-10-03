@@ -26,9 +26,9 @@ app.layout = html.Div([
             html.P(children='Please upload the json file containing your Google search history.'),
             dcc.Upload(
                 id='upload-data',
-                children=html.Button(children='Upload File')),
+                children=html.Button(children='Upload File')
+            ),
             dcc.Loading(
-                id='upload-loading',
                 children=html.P(id='display-file-name',style={'margin-top':'3px','color':'green'})
             )
         ],
@@ -49,7 +49,7 @@ app.layout = html.Div([
         id='step3-text',
         className='step3_block'
     )
-])
+], id='root')
 
 def parse_data(data_json, filename):
     type, content = data_json.split(',')
@@ -60,7 +60,7 @@ def parse_data(data_json, filename):
             data = json.load(io.StringIO(decoded.decode('utf-8')))
             searched_data = [e['title'][13:] for e in data if e['title'][0]=='S']
             vocab = set(sub_e for e in searched_data for sub_e in e.split(' ') if len(sub_e)>1)
-            return vocab
+            return sorted(vocab)
         else:
             pass # TODO: Show that the uploaded file is not json
     except Exception as e:
@@ -113,9 +113,10 @@ def display_queries(words, val):
             labelStyle=dict(display='block')
         ),[
             html.H2(children='Step 3: Uploading the file'),
-            html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server.'
+            html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server. '
                             'When you are ready, please sonfirm that you have reviewed the search terms that you are comfortable sharing with us.'),
-            html.Button(children='I have reviewed my search queries and I am ready to proceed')
+            html.Button(id='submit-btn',
+                        children='I have reviewed my search queries and I am ready to proceed')
         ])
 
 @app.callback(Output('intermediate-value','children'),
@@ -130,7 +131,7 @@ def save_checked_values(values):
               [Input('upload-data', 'contents')], # TODO: remove this if possible
               [State('upload-data', 'filename')])
 def display_step2_instructions(data_json, filename):
-    if filename is not None:
+    if data_json is not None:
         return (str(filename), [
             html.H2(children='Step 2: Filtering of undesirable search history with manual review'),
             html.P(children='The file is successfully loaded! You can now '
@@ -140,8 +141,26 @@ def display_step2_instructions(data_json, filename):
     else:
         raise PreventUpdate
 
+@app.callback(Output('root','children'),
+              [Input('submit-btn', 'n_clicks')],
+              [State('intermediate-value','children')])
+def submit_reviewed_data(n_clicks, checked_queries):
+    if checked_queries is not None:
+        checked_queries = eval(checked_queries)
+        l = []
+        for e in checked_queries:
+            w = e.rstrip('0123456789')
+            ind = int(e[len(w):])
+            l.append(ind)
+        print(l)
+        final_data = [e for i,e in enumerate(data) if (e['title'][0]=='S' and i not in l)]
+        with open('filtered_data.json', 'w', encoding='utf-8') as f:
+            json.dump(final_data, f, ensure_ascii=False, indent=4)
+        return html.Div(children=[html.Img(src='/assets/submission_successful.png'),
+                                  html.P(['Thank you!',
+                                          html.Br(),
+                                          'The file has been successfully uploaded.'],
+                                         className='submitted')],className='submission_block')
+
 if __name__ == '__main__':
     app.run_server()
-
-
-
