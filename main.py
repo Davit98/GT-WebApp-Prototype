@@ -7,7 +7,12 @@ from dash.exceptions import PreventUpdate
 import json
 import io
 import base64
-import time
+import os
+import sys
+
+# print('#######',os.getcwd())
+# os.chdir(sys._MEIPASS)
+# print('#######',os.getcwd())
 
 app = dash.Dash(__name__)
 
@@ -28,9 +33,7 @@ app.layout = html.Div([
                 id='upload-data',
                 children=html.Button(children='Upload File')
             ),
-            dcc.Loading(
-                children=html.P(id='display-file-name',style={'margin-top':'3px','color':'green'})
-            )
+            html.P(id='display-file-name',style={'margin-top':'3px','color':'green'})
         ],
         className='step1_block'
     ),
@@ -69,18 +72,37 @@ def parse_data(data_json, filename):
             'There was an error processing this file.'
         ])
 
-@app.callback(Output('filtering', 'children'),
+@app.callback([Output('filtering', 'children'),
+               Output('filtered-queries','children'),
+               Output('step3-text','children')],
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 def enable_filtering(data_json,filename):
     if data_json is not None:
         vocab = parse_data(data_json, filename)
-        options = [{'label':word,'value':word} for word in vocab]
-        return dcc.Dropdown(
-            options=options,
-            multi=True,
-            id='drop-down'
+        options_1 = [{'label':word,'value':word} for word in vocab]
+        options_2 = [{'label':e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value':str(i)}
+                     for i,e in enumerate(data) if e['title'][0] == 'S']
+        return (
+            dcc.Dropdown(
+                options=options_1,
+                multi=True,
+                id='drop-down'),
+            dcc.Checklist(
+                id='check-list',
+                options=options_2,
+                labelStyle=dict(display='block')
+            ),
+            [
+                html.H2(children='Step 3: Uploading the file'),
+                html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server. '
+                                'When you are ready, please sonfirm that you have reviewed the search terms that you are comfortable sharing with us.'),
+                html.Button(id='submit-btn',
+                            children='I have reviewed my search queries and I am ready to proceed')
+            ]
         )
+    else:
+        raise PreventUpdate
 
 @app.callback([Output('filtered-queries','children'),
                Output('step3-text','children')],
@@ -91,33 +113,52 @@ def display_queries(words, val):
         # print(words)
         # print(len(data))
 
-        val_2 = []
-        if val is not None:
-            val = eval(val)
-            print('val:',val)
-            for w in val:
-                w2 = w.rstrip('0123456789')
-                if w2[:-1] in words:
-                    val_2.append(w)
+        if len(words)==0:
+            options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': str(i)}
+                         for i, e in enumerate(data) if e['title'][0] == 'S']
+            return (dcc.Checklist(
+                id='check-list',
+                options=options,
+                labelStyle=dict(display='block')
+            ),[
+                html.H2(children='Step 3: Uploading the file'),
+                html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server. '
+                                'When you are ready, please sonfirm that you have reviewed the search terms that you are comfortable sharing with us.'),
+                html.Button(id='submit-btn',
+                            children='I have reviewed my search queries and I am ready to proceed')
+            ])
 
-        print('***',val_2)
-        print('words',words)
+        else:
+            val_2 = []
+            if val is not None:
+                val = eval(val)
+                print('val:',val)
+                for w in val:
+                    w2 = w.rstrip('0123456789')
+                    if w2[:-1] in words:
+                        val_2.append(w)
 
-        options = [{'label':e['time'][:10] + ',' + e['time'][11:16] + ' : ' + e['title'][13:],'value':w+'_'+str(i)}
-                   for w in words for i,e in enumerate(data) if e['title'][0] == 'S' and w in e['title'][13:].split(' ')]
-        # print(options)
-        return (dcc.Checklist(
-            id='check-list',
-            options=options,
-            value=val_2,
-            labelStyle=dict(display='block')
-        ),[
-            html.H2(children='Step 3: Uploading the file'),
-            html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server. '
-                            'When you are ready, please sonfirm that you have reviewed the search terms that you are comfortable sharing with us.'),
-            html.Button(id='submit-btn',
-                        children='I have reviewed my search queries and I am ready to proceed')
-        ])
+            print('***',val_2)
+            print('words',words)
+
+            options = [{'label':e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value':w+'_'+str(i)}
+                       for w in words for i,e in enumerate(data) if e['title'][0] == 'S' and w in e['title'][13:].split(' ')]
+            # print(options)
+            return (dcc.Checklist(
+                id='check-list',
+                options=options,
+                value=val_2,
+                labelStyle=dict(display='block')
+            ),[
+                html.H2(children='Step 3: Uploading the file'),
+                html.P(children='In this step, the list of issued search terms and the coresponding dates will be uploaded to our server. '
+                                'When you are ready, please sonfirm that you have reviewed the search terms that you are comfortable sharing with us.'),
+                html.Button(id='submit-btn',
+                            children='I have reviewed my search queries and I am ready to proceed')
+            ])
+    else:
+        raise PreventUpdate
+
 
 @app.callback(Output('intermediate-value','children'),
               [Input('check-list', 'value')])
@@ -154,8 +195,8 @@ def submit_reviewed_data(n_clicks, checked_queries):
             l.append(ind)
         print(l)
         final_data = [e for i,e in enumerate(data) if (e['title'][0]=='S' and i not in l)]
-        with open('filtered_data.json', 'w', encoding='utf-8') as f:
-            json.dump(final_data, f, ensure_ascii=False, indent=4)
+        # with open('filtered_data.json', 'w', encoding='utf-8') as f:
+        #     json.dump(final_data, f, ensure_ascii=False, indent=4)
         return html.Div(children=[html.Img(src='/assets/submission_successful.png'),
                                   html.P(['Thank you!',
                                           html.Br(),

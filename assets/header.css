@@ -20,7 +20,7 @@
 .search_bar {
   padding-left: 20px;
   padding-right: 20px;
-  margin-bottom: 100px;
+  margin-bottom: 50px;
 }
 
 .query_checklist {
@@ -66,4 +66,13 @@ img {
   margin-right: auto;
 }
 
-/*Thank you! The moderated file has been uploaded. You can access it bellow for your record.*/
+.query_checklist[data-dash-is-loading="true"] {
+    visibility: hidden;
+}
+
+.query_checklist[data-dash-is-loading="true"]::before{
+    content: "Loading...";
+    display: inline-block;
+    color: #119DFF;
+    visibility: visible;
+}
