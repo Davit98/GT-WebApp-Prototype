@@ -10,6 +10,7 @@ import base64
 import requests
 import os
 import sys
+from datetime import date
 
 # print('#######',os.getcwd())
 # os.chdir(sys._MEIPASS)
@@ -46,6 +47,10 @@ app.layout = html.Div([
         children=html.Div(id='filtering', className='search_bar'),
     ),
     html.Div(
+        id='date-picker-container',
+        className='date_picker_container'
+    ),
+    html.Div(
         id='filtered-queries',
         className='query_checklist'
     ),
@@ -57,14 +62,14 @@ app.layout = html.Div([
 
 
 def parse_data(data_json, filename):
-    type, content = data_json.split(',')
+    _, content = data_json.split(',')
     decoded = base64.b64decode(content)
     try:
         if filename.endswith('.json'):
-            global data
+            global searched_data
             data = json.load(io.StringIO(decoded.decode('utf-8')))
-            searched_data = [e['title'][13:] for e in data if e['title'][0] == 'S']
-            vocab = set(sub_e for e in searched_data for sub_e in e.split(' ') if len(sub_e) > 1)
+            searched_data = [e for e in data if e['title'][0] == 'S']
+            vocab = set(sub_e for e in searched_data for sub_e in e['title'][13:].split(' ') if len(sub_e) > 1)
             return sorted(vocab)
         else:
             pass  # TODO: Show that the uploaded file is not json
@@ -76,6 +81,7 @@ def parse_data(data_json, filename):
 
 
 @app.callback([Output('filtering', 'children'),
+               Output('date-picker-container', 'children'),
                Output('filtered-queries', 'children'),
                Output('step3-text', 'children')],
               [Input('upload-data', 'contents')],
@@ -85,17 +91,31 @@ def enable_filtering(data_json, filename):
         vocab = parse_data(data_json, filename)
         options_1 = [{'label': word, 'value': word} for word in vocab]
         options_2 = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': str(i)}
-                     for i, e in enumerate(data) if e['title'][0] == 'S']
+                     for i, e in enumerate(searched_data)]
+
+        min_year = int(searched_data[-1]['time'][:4])
+        min_month = int(searched_data[-1]['time'][5:7])
+        min_day = int(searched_data[-1]['time'][8:10])
+
+        max_year = int(searched_data[0]['time'][:4])
+        max_month = int(searched_data[0]['time'][5:7])
+        max_day = int(searched_data[0]['time'][8:10])
+
         return (
             dcc.Dropdown(
                 options=options_1,
                 multi=True,
                 id='drop-down'),
+            dcc.DatePickerRange(
+                id='date-picker',
+                min_date_allowed=date(min_year, min_month, min_day),
+                max_date_allowed=date(max_year, max_month, max_day),
+            ),
             dcc.Checklist(
                 id='check-list',
                 options=options_2,
                 style={'fontSize': '17px'},
-                labelStyle=dict(display='block')
+                labelStyle=dict(display='block',float='left',clear='left')
             ),
             [
                 html.H2(children='Step 3: Uploading the file'),
@@ -121,12 +141,12 @@ def display_queries(words, val):
 
         if len(words) == 0:
             options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': str(i)}
-                       for i, e in enumerate(data) if e['title'][0] == 'S']
+                       for i, e in enumerate(searched_data)]
             return (dcc.Checklist(
                 id='check-list',
                 options=options,
                 style={'fontSize': '17px'},
-                labelStyle=dict(display='block')
+                labelStyle=dict(display='block',float='left',clear='left')
             ), [
                         html.H2(children='Step 3: Uploading the file'),
                         html.P(
@@ -151,14 +171,14 @@ def display_queries(words, val):
 
             options = [
                 {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': w + '_' + str(i)}
-                for w in words for i, e in enumerate(data) if e['title'][0] == 'S' and w in e['title'][13:].split(' ')]
+                for w in words for i, e in enumerate(searched_data) if w in e['title'][13:].split(' ')]
             # print(options)
             return (dcc.Checklist(
                 id='check-list',
                 options=options,
                 style={'fontSize': '17px'},
                 value=val_2,
-                labelStyle=dict(display='block')
+                labelStyle=dict(display='block',float='left',clear='left')
             ), [
                         html.H2(children='Step 3: Uploading the file'),
                         html.P(
@@ -207,12 +227,12 @@ def submit_reviewed_data(n_clicks, checked_queries):
             ind = int(e[len(w):])
             l.append(ind)
         print(l)
-        final_data = [e for i, e in enumerate(data) if (e['title'][0] == 'S' and i not in l)]
+        final_data = [e for i, e in enumerate(searched_data) if i not in l]
     else:
-        final_data = [e for e in data if e['title'][0] == 'S']
+        final_data = searched_data
 
     r = requests.post('http://127.0.0.1:5000/', json=final_data)
-    if r.text=='successful':
+    if r.text == 'successful':
         with open('filtered_data.json', 'w', encoding='utf-8') as f:
             json.dump(final_data, f, ensure_ascii=False, indent=4)
 
@@ -223,7 +243,7 @@ def submit_reviewed_data(n_clicks, checked_queries):
                                          className='submitted')], className='submission_block')
     else:
         print(r.status_code)
-        pass # TODO: Display error message
+        pass  # TODO: Display error message
 
 
 if __name__ == '__main__':

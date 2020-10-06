@@ -20,7 +20,14 @@
 .search_bar {
     padding-left: 20px;
     padding-right: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+}
+
+.date_picker_container {
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-bottom: 20px;
+    font-size: 10px;
 }
 
 .query_checklist {
@@ -82,3 +89,7 @@ img {
     color: #119DFF;
     visibility: visible;
 }
+
+/*label {*/
+/*    display: inline-block !important;*/
+/*}*/
