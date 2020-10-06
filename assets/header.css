@@ -1,76 +1,82 @@
 .welcome_block {
-  text-align: center;
-  background-color: #d98247;
-  padding: 8em 100px 8em 100px;
+    text-align: center;
+    background-color: #d98247;
+    padding: 8em 100px 8em 100px;
 }
 
 .step1_block, .step2_block {
-  margin-top: 50px;
-  padding-left: 20px;
-  padding-right: 20px;
+    margin-top: 50px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .step3_block {
-  margin-top: 50px;
-  padding-left: 20px;
-  padding-right: 20px;
-  margin-bottom: 100px;
+    margin-top: 50px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-bottom: 100px;
 }
 
 .search_bar {
-  padding-left: 20px;
-  padding-right: 20px;
-  margin-bottom: 50px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-bottom: 30px;
 }
 
 .query_checklist {
-  padding-left: 20px;
-  padding-right: 20px;
-  margin-bottom: 50px;
-  height: 200px;
-  overflow-y:scroll;
-  width: 50%;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 300px;
+    overflow-y: scroll;
+    width: 95%;
+    background: linear-gradient(white 90%, hsla(0, 0%, 100%, 0)),
+    linear-gradient(hsla(0, 0%, 100%, 0) 10px, white 10%) bottom,
+    radial-gradient(at top, rgba(0, 0, 0, 0.2), transparent 70%),
+    radial-gradient(at bottom, rgba(0, 0, 0, 0.2), transparent 70%) bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 20px, 100% 20px, 100% 10px, 100% 10px;
+    background-attachment: local, local, scroll, scroll;
 }
 
 h1.title {
-  color: white;
+    color: white;
 }
 
 p.proj_desc {
-  color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.4);
 }
 
 h1, h2, h3, h4, h5, h6, p {
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 
 .submission_block {
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  margin-top: -100px;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    margin-top: -100px;
 }
 
 p.submitted {
-  color: black;
-  font-size: 20px;
-  text-align: center;
+    color: black;
+    font-size: 20px;
+    text-align: center;
 }
 
 img {
-  width: 100px;
-  height: 100px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+    width: 100px;
+    height: 100px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .query_checklist[data-dash-is-loading="true"] {
     visibility: hidden;
 }
 
-.query_checklist[data-dash-is-loading="true"]::before{
+.query_checklist[data-dash-is-loading="true"]::before {
     content: "Loading...";
     display: inline-block;
     color: #119DFF;
