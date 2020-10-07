@@ -10,7 +10,7 @@ import base64
 import requests
 import os
 import sys
-from datetime import date
+from datetime import date, datetime
 
 # print('#######',os.getcwd())
 # os.chdir(sys._MEIPASS)
@@ -106,16 +106,32 @@ def enable_filtering(data_json, filename):
                 options=options_1,
                 multi=True,
                 id='drop-down'),
-            dcc.DatePickerRange(
-                id='date-picker',
+            [dcc.DatePickerSingle(
+                id='date-picker-start',
+                clearable=True,
+                day_size=32,
+                number_of_months_shown=1,
+                placeholder='Start date',
                 min_date_allowed=date(min_year, min_month, min_day),
                 max_date_allowed=date(max_year, max_month, max_day),
-            ),
+                initial_visible_month=date(min_year, min_month, min_day),
+                date=date(min_year, min_month, min_day)),
+                dcc.DatePickerSingle(
+                    id='date-picker-end',
+                    clearable=True,
+                    day_size=32,
+                    number_of_months_shown=1,
+                    placeholder='End date',
+                    min_date_allowed=date(min_year, min_month, min_day),
+                    max_date_allowed=date(max_year, max_month, max_day),
+                    initial_visible_month=date(max_year, max_month, max_day),
+                    date=date(max_year, max_month, max_day)),
+                html.Button('UPDATE DATES', id='update-btn', className='update_btn')],
             dcc.Checklist(
                 id='check-list',
                 options=options_2,
                 style={'fontSize': '17px'},
-                labelStyle=dict(display='block',float='left',clear='left')
+                labelStyle=dict(display='block', float='left', clear='left')
             ),
             [
                 html.H2(children='Step 3: Uploading the file'),
@@ -130,6 +146,58 @@ def enable_filtering(data_json, filename):
         raise PreventUpdate
 
 
+@app.callback(Output('filtered-queries', 'children'),
+              [Input('update-btn', 'n_clicks')],
+              [State('date-picker-start', 'date'),
+               State('date-picker-end', 'date'),
+               State('intermediate-value', 'children'),
+               State('drop-down', 'value')])
+def display_date_picker_updates(n_clicks, start_date, end_date, checked_val, words):
+    if start_date is not None and end_date is not None:
+
+        print(start_date)
+        print(end_date)
+
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        if end_date > start_date:
+
+            val = []
+            if checked_val is not None:
+                val = eval(checked_val)
+                print('checked_val:', val)
+
+            if words is None or len(words)==0:
+                options = [
+                    {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value': str(i)}
+                    for i, e in enumerate(searched_data) if start_date <= datetime.strptime(e['time'][:10],'%Y-%m-%d') <= end_date
+                ]
+            else:
+                options = [
+                    {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value': w + '_' + str(i)}
+                    for w in words for i, e in enumerate(searched_data) if (w in e['title'][13:].split(' ') and start_date <= datetime.strptime(e['time'][:10],'%Y-%m-%d') <= end_date)
+                ]
+
+            return dcc.Checklist(
+                id='check-list',
+                options=options,
+                style={'fontSize': '17px'},
+                value=val,
+                labelStyle=dict(display='block', float='left', clear='left'))
+        else:
+            pass  # TODO: say that input is invalid date
+    else:
+        print('smth')
+
+        return dcc.Checklist(
+            id='check-list',
+            options=[],
+            style={'fontSize': '17px'},
+            labelStyle=dict(display='block', float='left', clear='left')
+        )
+
+
 @app.callback([Output('filtered-queries', 'children'),
                Output('step3-text', 'children')],
               [Input('drop-down', 'value')],
@@ -139,54 +207,36 @@ def display_queries(words, val):
         # print(words)
         # print(len(data))
 
-        if len(words) == 0:
-            options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': str(i)}
-                       for i, e in enumerate(searched_data)]
-            return (dcc.Checklist(
-                id='check-list',
-                options=options,
-                style={'fontSize': '17px'},
-                labelStyle=dict(display='block',float='left',clear='left')
-            ), [
-                        html.H2(children='Step 3: Uploading the file'),
-                        html.P(
-                            children='In this step, the list of issued search terms and the corresponding dates will be uploaded to our server. '
-                                     'When you are ready, please confirm that you have reviewed the search terms that you are comfortable sharing with us.'),
-                        html.Button(id='submit-btn',
-                                    children='I have reviewed my search queries and I am ready to proceed')
-                    ])
+        val_2 = []
+        if val is not None:
+            val = eval(val)
+            print('val:', val)
+            for w in val:
+                w2 = w.rstrip('0123456789')
+                if w2[:-1] in words:
+                    val_2.append(w)
 
-        else:
-            val_2 = []
-            if val is not None:
-                val = eval(val)
-                print('val:', val)
-                for w in val:
-                    w2 = w.rstrip('0123456789')
-                    if w2[:-1] in words:
-                        val_2.append(w)
+        print('***', val_2)
+        print('words', words)
 
-            print('***', val_2)
-            print('words', words)
-
-            options = [
-                {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': w + '_' + str(i)}
-                for w in words for i, e in enumerate(searched_data) if w in e['title'][13:].split(' ')]
-            # print(options)
-            return (dcc.Checklist(
-                id='check-list',
-                options=options,
-                style={'fontSize': '17px'},
-                value=val_2,
-                labelStyle=dict(display='block',float='left',clear='left')
-            ), [
-                        html.H2(children='Step 3: Uploading the file'),
-                        html.P(
-                            children='In this step, the list of issued search terms and the corresponding dates will be uploaded to our server. '
-                                     'When you are ready, please confirm that you have reviewed the search terms that you are comfortable sharing with us.'),
-                        html.Button(id='submit-btn',
-                                    children='I have reviewed my search queries and I am ready to proceed')
-                    ])
+        options = [
+            {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': w + '_' + str(i)}
+            for w in words for i, e in enumerate(searched_data) if w in e['title'][13:].split(' ')]
+        # print(options)
+        return (dcc.Checklist(
+            id='check-list',
+            options=options,
+            style={'fontSize': '17px'},
+            value=val_2,
+            labelStyle=dict(display='block', float='left', clear='left')
+        ), [
+                    html.H2(children='Step 3: Uploading the file'),
+                    html.P(
+                        children='In this step, the list of issued search terms and the corresponding dates will be uploaded to our server. '
+                                 'When you are ready, please confirm that you have reviewed the search terms that you are comfortable sharing with us.'),
+                    html.Button(id='submit-btn',
+                                children='I have reviewed my search queries and I am ready to proceed')
+                ])
     else:
         raise PreventUpdate
 
