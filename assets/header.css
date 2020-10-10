@@ -23,31 +23,9 @@
     margin-bottom: 20px;
 }
 
-.date_picker_container {
+.to_be_removed_header {
     padding-left: 20px;
-    padding-right: 20px;
-    margin-bottom: 20px;
-    font-size: 10px;
-}
-
-.DateInput_input {
-    font-size: 16px;
-}
-
-.update_btn {
-    display: inline-block;
-    background-color: white;
-    border: 2px solid #d98247;
-    margin-left: 10px;
-    padding: 8px 16px;
-    color: black;
-    transition-duration: 0.4s;
-    cursor: pointer;
-}
-
-.update_btn:hover {
-    background-color: #d98247;
-    color: white;
+    margin-bottom: 5px;
 }
 
 .query_checklist {
@@ -77,6 +55,11 @@ h1, h2, h3, h4, h5, h6, p {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+h4 {
+    margin-block-start: 0.1em;
+    margin-block-end: 0.1em;
+}
+
 .submission_block {
     position: absolute;
     top: 50%;
@@ -97,18 +80,3 @@ img {
     margin-left: auto;
     margin-right: auto;
 }
-
-.query_checklist[data-dash-is-loading="true"] {
-    visibility: hidden;
-}
-
-.query_checklist[data-dash-is-loading="true"]::before {
-    content: "Loading...";
-    display: inline-block;
-    color: #119DFF;
-    visibility: visible;
-}
-
-/*label {*/
-/*    display: inline-block !important;*/
-/*}*/

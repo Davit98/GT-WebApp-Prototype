@@ -1,6 +1,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -10,7 +11,6 @@ import base64
 import requests
 import os
 import sys
-from datetime import date, datetime
 
 # print('#######',os.getcwd())
 # os.chdir(sys._MEIPASS)
@@ -46,10 +46,7 @@ app.layout = html.Div([
     dcc.Loading(
         children=html.Div(id='filtering', className='search_bar'),
     ),
-    html.Div(
-        id='date-picker-container',
-        className='date_picker_container'
-    ),
+    html.H4(id='to-be-removed-text', className='to_be_removed_header'),
     html.Div(
         id='filtered-queries',
         className='query_checklist'
@@ -57,7 +54,11 @@ app.layout = html.Div([
     html.Div(
         id='step3-text',
         className='step3_block'
-    )
+    ),
+    dcc.ConfirmDialog(
+        id='confirm',
+        message='Are you sure you want to submit the data?',
+    ),
 ], id='root')
 
 
@@ -69,10 +70,9 @@ def parse_data(data_json, filename):
             global searched_data
             data = json.load(io.StringIO(decoded.decode('utf-8')))
             searched_data = [e for e in data if e['title'][0] == 'S']
-            vocab = set(sub_e for e in searched_data for sub_e in e['title'][13:].split(' ') if len(sub_e) > 1)
-            return sorted(vocab)
+            return searched_data
         else:
-            pass  # TODO: Show that the uploaded file is not json
+            return []
     except Exception as e:
         print(e)
         return html.Div([
@@ -81,219 +81,113 @@ def parse_data(data_json, filename):
 
 
 @app.callback([Output('filtering', 'children'),
-               Output('date-picker-container', 'children'),
-               Output('filtered-queries', 'children'),
+               Output('to-be-removed-text', 'children'),
                Output('step3-text', 'children')],
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 def enable_filtering(data_json, filename):
     if data_json is not None:
-        vocab = parse_data(data_json, filename)
-        options_1 = [{'label': word, 'value': word} for word in vocab]
-        options_2 = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': str(i)}
-                     for i, e in enumerate(searched_data)]
+        srch_data = parse_data(data_json, filename)
+        if len(srch_data)>0:
+            options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],
+                        'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
+                       for i, e in enumerate(srch_data)]
 
-        min_year = int(searched_data[-1]['time'][:4])
-        min_month = int(searched_data[-1]['time'][5:7])
-        min_day = int(searched_data[-1]['time'][8:10])
-
-        max_year = int(searched_data[0]['time'][:4])
-        max_month = int(searched_data[0]['time'][5:7])
-        max_day = int(searched_data[0]['time'][8:10])
-
-        return (
-            dcc.Dropdown(
-                options=options_1,
-                multi=True,
-                id='drop-down'),
-            [dcc.DatePickerSingle(
-                id='date-picker-start',
-                clearable=True,
-                day_size=32,
-                number_of_months_shown=1,
-                placeholder='Start date',
-                min_date_allowed=date(min_year, min_month, min_day),
-                max_date_allowed=date(max_year, max_month, max_day),
-                initial_visible_month=date(min_year, min_month, min_day),
-                date=date(min_year, min_month, min_day)),
-                dcc.DatePickerSingle(
-                    id='date-picker-end',
+            return (
+                dcc.Dropdown(
+                    options=options,
+                    multi=True,
                     clearable=True,
-                    day_size=32,
-                    number_of_months_shown=1,
-                    placeholder='End date',
-                    min_date_allowed=date(min_year, min_month, min_day),
-                    max_date_allowed=date(max_year, max_month, max_day),
-                    initial_visible_month=date(max_year, max_month, max_day),
-                    date=date(max_year, max_month, max_day)),
-                html.Button('UPDATE DATES', id='update-btn', className='update_btn')],
-            dcc.Checklist(
-                id='check-list',
-                options=options_2,
-                style={'fontSize': '17px'},
-                labelStyle=dict(display='block', float='left', clear='left')
-            ),
-            [
-                html.H2(children='Step 3: Uploading the file'),
-                html.P(
-                    children='In this step, the list of issued search terms and the corresponding dates will be uploaded to our server. '
-                             'When you are ready, please confirm that you have reviewed the search terms that you are comfortable sharing with us.'),
-                html.Button(id='submit-btn',
-                            children='I have reviewed my search queries and I am ready to proceed')
-            ]
-        )
-    else:
-        raise PreventUpdate
-
-
-@app.callback(Output('filtered-queries', 'children'),
-              [Input('update-btn', 'n_clicks')],
-              [State('date-picker-start', 'date'),
-               State('date-picker-end', 'date'),
-               State('intermediate-value', 'children'),
-               State('drop-down', 'value')])
-def display_date_picker_updates(n_clicks, start_date, end_date, checked_val, words):
-    if start_date is not None and end_date is not None:
-
-        print(start_date)
-        print(end_date)
-
-        start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(end_date, '%Y-%m-%d')
-
-        if end_date > start_date:
-
-            val = []
-            if checked_val is not None:
-                val = eval(checked_val)
-                print('checked_val:', val)
-
-            if words is None or len(words)==0:
-                options = [
-                    {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value': str(i)}
-                    for i, e in enumerate(searched_data) if start_date <= datetime.strptime(e['time'][:10],'%Y-%m-%d') <= end_date
-                ]
-            else:
-                options = [
-                    {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],'value': w + '_' + str(i)}
-                    for w in words for i, e in enumerate(searched_data) if (w in e['title'][13:].split(' ') and start_date <= datetime.strptime(e['time'][:10],'%Y-%m-%d') <= end_date)
-                ]
-
-            return dcc.Checklist(
-                id='check-list',
-                options=options,
-                style={'fontSize': '17px'},
-                value=val,
-                labelStyle=dict(display='block', float='left', clear='left'))
-        else:
-            pass  # TODO: say that input is invalid date
-    else:
-        print('smth')
-
-        return dcc.Checklist(
-            id='check-list',
-            options=[],
-            style={'fontSize': '17px'},
-            labelStyle=dict(display='block', float='left', clear='left')
-        )
-
-
-@app.callback([Output('filtered-queries', 'children'),
-               Output('step3-text', 'children')],
-              [Input('drop-down', 'value')],
-              [State('intermediate-value', 'children')])
-def display_queries(words, val):
-    if words is not None:
-        # print(words)
-        # print(len(data))
-
-        val_2 = []
-        if val is not None:
-            val = eval(val)
-            print('val:', val)
-            for w in val:
-                w2 = w.rstrip('0123456789')
-                if w2[:-1] in words:
-                    val_2.append(w)
-
-        print('***', val_2)
-        print('words', words)
-
-        options = [
-            {'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:], 'value': w + '_' + str(i)}
-            for w in words for i, e in enumerate(searched_data) if w in e['title'][13:].split(' ')]
-        # print(options)
-        return (dcc.Checklist(
-            id='check-list',
-            options=options,
-            style={'fontSize': '17px'},
-            value=val_2,
-            labelStyle=dict(display='block', float='left', clear='left')
-        ), [
+                    placeholder='Select queries...',
+                    id='drop-down'),
+                html.H4('Queries to be removed'),
+                [
                     html.H2(children='Step 3: Uploading the file'),
                     html.P(
-                        children='In this step, the list of issued search terms and the corresponding dates will be uploaded to our server. '
-                                 'When you are ready, please confirm that you have reviewed the search terms that you are comfortable sharing with us.'),
+                        children='In this step, the list of unselected queries and the corresponding metadata will be uploaded to our server. '
+                                 'When you are ready, please confirm that you have reviewed the search history that you are comfortable sharing with us.'),
                     html.Button(id='submit-btn',
                                 children='I have reviewed my search queries and I am ready to proceed')
-                ])
+                ]
+            )
     else:
         raise PreventUpdate
 
 
-@app.callback(Output('intermediate-value', 'children'),
-              [Input('check-list', 'value')])
-def save_checked_values(values):
-    if values is not None:
-        print('###', values)
-        return str(values)
+@app.callback([Output('intermediate-value', 'children'),
+               Output('filtered-queries', 'children')],
+              [Input('drop-down', 'value')])
+def display_to_be_removed(queries):
+    if queries is not None:
+        l1 = []
+        l2 = []
+        for each in queries:
+            e = each.rstrip('0123456789')
+            l1.append(int(each[len(e):]))
+            l2.append(html.P(e[:-1]))
+        return (str(l1), l2)
+    else:
+        raise PreventUpdate
 
 
 @app.callback([Output('display-file-name', 'children'),
                Output('step2-text', 'children')],
-              [Input('upload-data', 'contents')],  # TODO: remove this if possible
+              [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 def display_step2_instructions(data_json, filename):
     if data_json is not None:
+        if not filename.endswith('.json'):
+            return ('Error! The uploaded file is not json. Please upload correct file.',[])
         return (str(filename), [
             html.H2(children='Step 2: Filtering of undesirable search history with manual review'),
             html.P(children='The file is successfully loaded! You can now '
-                            'select the queries that you don\'t wish to share with us using the search bar. '
-                            'The search bar contains all unique words of your search queries.')
+                            'select the queries that you don\'t wish to share with us using the search bar below. '
+                            'The search bar contains all your search queries sorted by date in decreasing order. '
+                            'You can manually scroll over the queries and select the ones you want to be removed. '
+                            'In addition, the search bar allows you to type words/phrases and find the queries that contain them.')
         ])
     else:
         raise PreventUpdate
 
 
+@app.callback(Output('confirm', 'displayed'),
+              [Input('submit-btn', 'n_clicks')])
+def display_confirm(n_clicks):
+    return True
+
+
 @app.callback(Output('root', 'children'),
-              [Input('submit-btn', 'n_clicks')],
+              [Input('confirm', 'submit_n_clicks')],
               [State('intermediate-value', 'children')])
-def submit_reviewed_data(n_clicks, checked_queries):
-    if checked_queries is not None:
-        checked_queries = eval(checked_queries)
-        l = []
-        for e in checked_queries:
-            w = e.rstrip('0123456789')
-            ind = int(e[len(w):])
-            l.append(ind)
-        print(l)
-        final_data = [e for i, e in enumerate(searched_data) if i not in l]
-    else:
-        final_data = searched_data
+def submit_reviewed_data(n_clicks, queries_tbr):
+    if n_clicks is not None:
+        # print('n_clicks: ',n_clicks)
+        if queries_tbr is not None:
+            queries_tbr = eval(queries_tbr)
+            # print(queries_tbr)
+            final_data = [e for i, e in enumerate(searched_data) if i not in queries_tbr]
+        else:
+            final_data = searched_data
 
-    r = requests.post('http://127.0.0.1:5000/', json=final_data)
-    if r.text == 'successful':
-        with open('filtered_data.json', 'w', encoding='utf-8') as f:
-            json.dump(final_data, f, ensure_ascii=False, indent=4)
+        r = requests.post('http://127.0.0.1:5000/', json=final_data)
+        if r.text == 'successful':
+            with open('filtered_data.json', 'w', encoding='utf-8') as f:
+                json.dump(final_data, f, ensure_ascii=False, indent=4)
 
-        return html.Div(children=[html.Img(src='/assets/submission_successful.png'),
-                                  html.P(['Thank you!',
-                                          html.Br(),
-                                          'The file has been successfully uploaded.'],
-                                         className='submitted')], className='submission_block')
+            return html.Div(children=[html.Img(src='/assets/submission_successful.png'),
+                                      html.P(['Thank you!',
+                                              html.Br(),
+                                              'The file has been successfully uploaded.'],
+                                             className='submitted')], className='submission_block')
+        else:
+            print(r.status_code)
+            return html.Div(children=[html.Img(src='/assets/smth_went_wrong.png'),
+                                      html.P(['Oops!',
+                                              html.Br(),
+                                              'Something went wrong. Please try again.'],
+                                             className='submitted')], className='submission_block')
     else:
-        print(r.status_code)
-        pass  # TODO: Display error message
+        raise PreventUpdate
 
 
 if __name__ == '__main__':
