@@ -1,6 +1,6 @@
 .welcome_block {
     text-align: center;
-    background-color: #d98247;
+    background-color: #209CEE;
     padding: 8em 100px 8em 100px;
 }
 
@@ -14,6 +14,9 @@
     margin-top: 50px;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.submission_loading {
     margin-bottom: 100px;
 }
 
@@ -69,7 +72,7 @@ h4 {
 
 p.submitted {
     color: black;
-    font-size: 20px;
+    font-size: 18px;
     text-align: center;
 }
 
