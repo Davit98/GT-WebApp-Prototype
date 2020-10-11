@@ -1,7 +1,6 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -11,12 +10,30 @@ import base64
 import requests
 import os
 import sys
+import webbrowser
+
+# PORT = 8050
+# ADDRESS = 127.0.0.1
 
 # print('#######',os.getcwd())
 # os.chdir(sys._MEIPASS)
 # print('#######',os.getcwd())
 
+
+# MacOS
+chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
+webbrowser.get(chrome_path).open('http://127.0.0.1:8050/')
+
+# Windows
+# chrome_path = 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s'
+
+# Linux
+# chrome_path = '/usr/bin/google-chrome %s'
+
+
 app = dash.Dash(__name__)
+
+app.title = 'Google Takeout'
 
 app.layout = html.Div([
     html.Div(id='intermediate-value', style={'display': 'none'}),
@@ -98,16 +115,15 @@ def enable_filtering(data_json, filename):
                     options=options,
                     multi=True,
                     clearable=True,
-                    placeholder='Select queries...',
                     id='drop-down'),
                 html.H4('Queries to be removed'),
                 [
-                    html.H2(children='Step 3: Uploading the file'),
+                    html.H2(children='Step 3: Submitting the file'),
                     html.P(
-                        children='In this step, the list of unselected queries and the corresponding metadata will be uploaded to our server. '
-                                 'When you are ready, please confirm that you have reviewed the search history that you are comfortable sharing with us.'),
+                        children='In this step, the list of unselected queries and corresponding metadata will be uploaded to our server. '
+                                 'When you are done reviewing your search history and are comfortable to share it with us, please click the button below to confirm.'),
                     html.Button(id='submit-btn',
-                                children='I have reviewed my search queries and I am ready to proceed')
+                                children='I have reviewed my search history and I am ready to submit')
                 ]
             )
     else:
@@ -140,11 +156,12 @@ def display_step2_instructions(data_json, filename):
             return ('Error! The uploaded file is not json. Please upload correct file.',[])
         return (str(filename), [
             html.H2(children='Step 2: Filtering of undesirable search history with manual review'),
-            html.P(children='The file is successfully loaded! You can now '
-                            'select the queries that you don\'t wish to share with us using the search bar below. '
-                            'The search bar contains all your search queries sorted by date in decreasing order. '
-                            'You can manually scroll over the queries and select the ones you want to be removed. '
-                            'In addition, the search bar allows you to type words/phrases and find the queries that contain them.')
+            html.P(children='Your file is successfully loaded! You can now use the search bar below to '
+                            'select the queries that you don\'t wish to share with us. '
+                            'The search bar contains all your search queries sorted by date in descending order. '
+                            'You can manually scroll through the queries and select the ones you want to remove. '
+                            'In addition, the search bar allows you to type words/phrases (e.g. specific dates, keywords) and '
+                            'find the matching queries.')
         ])
     else:
         raise PreventUpdate
