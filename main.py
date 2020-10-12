@@ -60,8 +60,7 @@ app.layout = html.Div([
         className='step3_block'
     ),
     dcc.Loading(
-        className='submission_loading',
-        children=[html.Div(id='submission-loading')],
+        children=[html.Div(id='submission-loading',className='submission_loading',)],
         type='circle'
     ),
     dcc.ConfirmDialog(
@@ -160,9 +159,12 @@ def display_step2_instructions(data_json, filename):
 
 
 @app.callback(Output('confirm', 'displayed'),
-              [Input('submit-btn', 'n_clicks')])
-def display_confirm(n_clicks):
-    return True
+              [Input('submit-btn', 'n_clicks')],
+              [State('submit-btn', 'n_clicks')])
+def display_confirm(n_clicks,_):
+    if n_clicks:
+        return True
+    raise PreventUpdate
 
 
 @app.callback([Output('root', 'children'),
