@@ -35,7 +35,7 @@
     padding-left: 20px;
     padding-right: 20px;
     height: 300px;
-    overflow-y: scroll;
+    overflow-y: auto;
     width: 95%;
     background: linear-gradient(white 90%, hsla(0, 0%, 100%, 0)),
     linear-gradient(hsla(0, 0%, 100%, 0) 10px, white 10%) bottom,
