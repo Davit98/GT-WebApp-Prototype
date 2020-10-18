@@ -4,20 +4,25 @@
     padding: 8em 100px 8em 100px;
 }
 
+p.proj_desc {
+    color: rgba(255, 255, 255, 0.4);
+}
+
 .step1_block, .step2_block {
     margin-top: 50px;
     padding-left: 20px;
     padding-right: 20px;
 }
 
-.step3_block {
+.step3_block, .step4_block {
     margin-top: 50px;
     padding-left: 20px;
     padding-right: 20px;
 }
 
 .submission_loading {
-    margin-bottom: 100px;
+    margin-bottom: 200px;
+    text-align: center;
 }
 
 .search_bar {
@@ -26,32 +31,31 @@
     margin-bottom: 20px;
 }
 
+.black_list_words {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.proceed_to_step3, .proceed_to_step4 {
+    padding-left: 20px;
+}
+
+.to_step3_btn, .to_step4_btn {
+    margin-top: 10px;
+}
+
 .to_be_removed_header {
     padding-left: 20px;
     margin-bottom: 5px;
 }
 
-.query_checklist {
+.query_list_tbs {
     padding-left: 20px;
-    padding-right: 20px;
-    height: 300px;
-    overflow-y: auto;
-    width: 95%;
-    background: linear-gradient(white 90%, hsla(0, 0%, 100%, 0)),
-    linear-gradient(hsla(0, 0%, 100%, 0) 10px, white 10%) bottom,
-    radial-gradient(at top, rgba(0, 0, 0, 0.2), transparent 70%),
-    radial-gradient(at bottom, rgba(0, 0, 0, 0.2), transparent 70%) bottom;
-    background-repeat: no-repeat;
-    background-size: 100% 20px, 100% 20px, 100% 10px, 100% 10px;
-    background-attachment: local, local, scroll, scroll;
+    padding-right: 30px;
 }
 
 h1.title {
     color: white;
-}
-
-p.proj_desc {
-    color: rgba(255, 255, 255, 0.4);
 }
 
 h1, h2, h3, h4, h5, h6, p {
@@ -82,4 +86,27 @@ img {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+
+
+.query_list_tbs[data-dash-is-loading="true"] {
+    visibility: hidden;
+}
+
+.query_list_tbs[data-dash-is-loading="true"]::before {
+    content: "Loading...";
+    display: inline-block;
+    color: #119DFF;
+    visibility: visible;
+}
+
+.submission_loading[data-dash-is-loading="true"] {
+    visibility: hidden;
+}
+
+.submission_loading[data-dash-is-loading="true"]::before {
+    content: "Please wait the file is being uploaded...";
+    display: inline-block;
+    color: #119DFF;
+    visibility: visible;
 }
