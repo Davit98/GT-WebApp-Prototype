@@ -150,7 +150,7 @@ def enable_filtering(data_json, filename):
                 ),html.Img(src='/assets/tooltip.png',
                            id='tltip1',
                            className='tltip'),
-                dbc.Tooltip('Please note that the queries matching your black-list of words '
+                dbc.Tooltip('Please note that the queries containing your black-list of words '
                             'will still appear in the search bar but will be removed from the '
                             'final list.',
                             target='tltip1')],
@@ -189,7 +189,7 @@ def display_step2_instructions(data_json, filename):
                                   'You can manually scroll through the queries and select the ones you want to remove. '
                                   'In addition, the search bar allows you to type words/phrases (e.g. specific dates, keywords) and '
                                   'find the matching queries. Furthermore, you have the option to type your \'black list of words\' (see the box provided '
-                                  'under the search bar) to remove all queries matching these words right away.')
+                                  'under the search bar) to remove all queries containing these words right away.')
         ])
     else:
         raise PreventUpdate
@@ -253,12 +253,11 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
         return (
             [
                 html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
-                html.P(children='This is the filtered list of your queries after your manual review. '
+                html.P(children='Below is the filtered list of your queries after your manual review. '
                                 'In total, ' + str(n_removed) + ' queries have been removed resulting in'
                                                                 ' ' + str(
                     len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries. '
-                    'You can go through the query list shown below and make sure you are happy to submit '
-                    'it. If you would like to remove some more queries after review, you can use the tools '
+                    'If you would like to remove some more queries, you can use the tools '
                     'provided in Step 2 and then click on the "Update" button to see the new updated list of '
                     'your queries.')
             ],
