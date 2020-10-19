@@ -71,6 +71,10 @@ app.layout = html.Div([
         id='proceed-to-step3',
         className='proceed_to_step3'
     ),
+    html.P(
+        id='unmatched-words-notice',
+        className='unmatched_words'
+    ),
     html.Div(
         id='step3-text',
         className='step3_block'
@@ -188,7 +192,8 @@ def display_step2_instructions(data_json, filename):
                Output('filtered-queries', 'children'),
                Output('intermediate-value-2', 'children'),
                Output('to-step3-btn', 'children'),
-               Output('proceed-to-step4', 'children')],
+               Output('proceed-to-step4', 'children'),
+               Output('unmatched-words-notice','children')],
               [Input('to-step3-btn', 'n_clicks')],
               [State('intermediate-value', 'children'),
                State('black-list-words-txt', 'value')])
@@ -199,32 +204,49 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
                        for e in searched_data]
         queries_tbs_dlc = queries_tbs.copy()
 
-        print(queries_tbs[:5])
+        # print(queries_tbs[:5])
 
         if queries_tbr is not None:
             queries_tbr = eval(queries_tbr)
             indices += queries_tbr.copy()
-            print(queries_tbr)
+            # print(queries_tbr)
             if len(queries_tbr) > 0:
                 queries_tbs = [e for i, e in enumerate(queries_tbs) if i not in queries_tbr]
 
+        matched = set()
+        unmatched = set()
         if black_list_text is not None:
-            bl = [e.strip() for e in black_list_text.split(',')]
-            print(bl)
+            bl = set([e.strip().lower() for e in black_list_text.split(',') if e.strip().lower()])
+            print('#######',bl)
             if len(bl) > 0:
+                for w in bl:
+                    for q in queries_tbs:
+                        if w in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')]:
+                            matched.add(w)
+                            break
+
+                unmatched = bl - matched
                 queries_tbs = [q for q in queries_tbs
                                if not any(
-                        i in bl for i in [re.sub('[^A-Za-z0-9]+', '', e.strip().lower()) for e in q[20:-1].split(' ')])]
+                        i in bl for i in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
                 l = [j for j, q in enumerate(queries_tbs_dlc)
                      if any(
-                        i in bl for i in [re.sub('[^A-Za-z0-9]+', '', e.strip().lower()) for e in q[20:-1].split(' ')])]
+                        i in bl for i in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
                 indices += l
 
         queries_tbs[-1] = queries_tbs[-1][:-1]
+        n_removed = len(searched_data) - len(queries_tbs)
+
+        text = ''
+        if len(unmatched)>0:
+            text = 'The word(s) {' + ",".join(list(unmatched)) + '} did not match any query.'
+
         return (
             [
                 html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
-                html.P(children='This is the filtered list of your queries after your manual review.')
+                html.P(children='This is the filtered list of your queries after your manual review. '
+                                'In total, ' + str(n_removed) + ' queries have been removed resulting in'
+                                ' ' + str(len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries.')
             ],
             dcc.Textarea(
                 value=''.join(queries_tbs),
@@ -233,7 +255,8 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
             ),
             str(list(set(indices))),
             'Update',
-            html.Button(id='to-step4-btn', className='to_step4_btn', children='I am happy with my list')
+            html.Button(id='to-step4-btn', className='to_step4_btn', children='I am happy with my list'),
+            text
         )
     else:
         raise PreventUpdate
@@ -275,7 +298,7 @@ def submit_reviewed_data(n_clicks, queries_tbr):
         # print('n_clicks: ',n_clicks)
         if queries_tbr is not None:
             queries_tbr = eval(queries_tbr)
-            print(queries_tbr)
+            # print(queries_tbr)
             final_data = [e for i, e in enumerate(searched_data) if i not in queries_tbr]
         else:
             final_data = searched_data
