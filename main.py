@@ -101,7 +101,7 @@ app.layout = html.Div([
     dcc.ConfirmDialog(
         id='confirm',
         message='Are you sure you want to submit the data?',
-    ),
+    )
 ], id='root')
 
 
@@ -142,12 +142,18 @@ def enable_filtering(data_json, filename):
                     multi=True,
                     clearable=True,
                     id='drop-down'),
-                dcc.Textarea(
+                [dcc.Textarea(
                     id='black-list-words-txt',
                     placeholder='Enter your black list of words (please separate them by comma)',
                     style={'width': '50%', 'height': '100px', 'fontSize': '15px'},
                     spellCheck=True
-                ),
+                ),html.Img(src='/assets/tooltip.png',
+                           id='tltip1',
+                           className='tltip'),
+                dbc.Tooltip('Please note that the queries matching your black-list of words '
+                            'will still appear in the search bar but will be removed from the '
+                            'final list.',
+                            target='tltip1')],
                 html.Button(id='to-step3-btn', className='to_step3_btn', children='Proceed to the next step')
             )
     else:
@@ -182,7 +188,8 @@ def display_step2_instructions(data_json, filename):
                 len(srch_data)) + ') sorted by date in descending order. '
                                   'You can manually scroll through the queries and select the ones you want to remove. '
                                   'In addition, the search bar allows you to type words/phrases (e.g. specific dates, keywords) and '
-                                  'find the matching queries. Furthermore, you can type...')
+                                  'find the matching queries. Furthermore, you have the option to type your \'black list of words\' (see the box provided '
+                                  'under the search bar) to remove all queries matching these words right away.')
         ])
     else:
         raise PreventUpdate
@@ -193,7 +200,7 @@ def display_step2_instructions(data_json, filename):
                Output('intermediate-value-2', 'children'),
                Output('to-step3-btn', 'children'),
                Output('proceed-to-step4', 'children'),
-               Output('unmatched-words-notice','children')],
+               Output('unmatched-words-notice', 'children')],
               [Input('to-step3-btn', 'n_clicks')],
               [State('intermediate-value', 'children'),
                State('black-list-words-txt', 'value')])
@@ -217,28 +224,30 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
         unmatched = set()
         if black_list_text is not None:
             bl = set([e.strip().lower() for e in black_list_text.split(',') if e.strip().lower()])
-            print('#######',bl)
+            print('#######', bl)
             if len(bl) > 0:
                 for w in bl:
                     for q in queries_tbs:
-                        if w in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')]:
+                        if w in [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')]:
                             matched.add(w)
                             break
 
                 unmatched = bl - matched
                 queries_tbs = [q for q in queries_tbs
                                if not any(
-                        i in bl for i in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
+                        i in bl for i in
+                        [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
                 l = [j for j, q in enumerate(queries_tbs_dlc)
                      if any(
-                        i in bl for i in [e.strip('!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
+                        i in bl for i in
+                        [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
                 indices += l
 
         queries_tbs[-1] = queries_tbs[-1][:-1]
         n_removed = len(searched_data) - len(queries_tbs)
 
         text = ''
-        if len(unmatched)>0:
+        if len(unmatched) > 0:
             text = 'The word(s) {' + ",".join(list(unmatched)) + '} did not match any query.'
 
         return (
@@ -246,7 +255,12 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
                 html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
                 html.P(children='This is the filtered list of your queries after your manual review. '
                                 'In total, ' + str(n_removed) + ' queries have been removed resulting in'
-                                ' ' + str(len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries.')
+                                                                ' ' + str(
+                    len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries. '
+                    'You can go through the query list shown below and make sure you are happy to submit '
+                    'it. If you would like to remove some more queries after review, you can use the tools '
+                    'provided in Step 2 and then click on the "Update" button to see the new updated list of '
+                    'your queries.')
             ],
             dcc.Textarea(
                 value=''.join(queries_tbs),
@@ -270,7 +284,7 @@ def display_step4(n_clicks, _):
         return [
             html.H2(children='Step 4: Submitting the file'),
             html.P(
-                children='In this step, the list of unselected queries and corresponding metadata will be uploaded to our server. '
+                children='In this step, the list of selected queries and corresponding metadata will be uploaded to our server. '
                          'When you are done reviewing your search history and are comfortable to share it with us, please click the button below to confirm.'),
             html.Button(id='submit-btn',
                         children='I have reviewed my search history and I am ready to submit')
