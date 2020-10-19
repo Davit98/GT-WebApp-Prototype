@@ -100,10 +100,13 @@ img.tltip {
     display: inline;
 }
 
-/*img.tooltip {*/
-/*    width: 50px;*/
-/*    height: 50px;*/
+/*textarea {*/
+/*    resize:none;*/
 /*}*/
+
+#queries-tbs-txtarea {
+      resize:none;
+}
 
 .query_list_tbs[data-dash-is-loading="true"] {
     visibility: hidden;

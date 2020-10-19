@@ -6,7 +6,6 @@ from dash.exceptions import PreventUpdate
 
 import json
 import io
-import re
 import base64
 import requests
 import os
@@ -264,7 +263,8 @@ def display_step3(n_clicks, queries_tbr, black_list_text):
             dcc.Textarea(
                 value=''.join(queries_tbs),
                 style={'width': '100%', 'height': '300px', 'fontSize': '15px'},
-                disabled=True
+                disabled=True,
+                id='queries-tbs-txtarea'
             ),
             str(list(set(indices))),
             'Update',
