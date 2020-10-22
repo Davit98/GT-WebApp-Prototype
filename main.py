@@ -13,6 +13,7 @@ import sys
 import webbrowser
 import threading
 from pathlib import Path
+from datetime import date, datetime
 
 import dash_bootstrap_components as dbc
 
@@ -25,7 +26,8 @@ app = dash.Dash(__name__)
 app.title = 'Google Takeout'
 
 app.layout = html.Div([
-    html.Div(id='intermediate-value', style={'display': 'none'}),
+    html.Div(id='intermediate-value-0', style={'display': 'none'}),
+    html.Div(id='intermediate-value-1', style={'display': 'none'}),
     html.Div(id='intermediate-value-2', style={'display': 'none'}),
     html.Div(
         children=[
@@ -58,6 +60,10 @@ app.layout = html.Div([
     html.Div(
         id='step2-text',
         className='step2_block'
+    ),
+    html.Div(
+        id='date-picker-container',
+        className='date_picker_container'
     ),
     dcc.Loading(
         children=html.Div(id='search-bar', className='search_bar'),
@@ -122,7 +128,9 @@ def parse_data(data_json, filename):
         ])
 
 
-@app.callback([Output('search-bar', 'children'),
+@app.callback([Output('intermediate-value-0','children'),
+               Output('date-picker-container', 'children'),
+               Output('search-bar', 'children'),
                Output('black-list-of-words', 'children'),
                Output('proceed-to-step3', 'children')],
               [Input('upload-data', 'contents')],
@@ -135,7 +143,36 @@ def enable_filtering(data_json, filename):
                         'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
                        for i, e in enumerate(srch_data)]
 
-            return (
+            min_year = int(srch_data[-1]['time'][:4])
+            min_month = int(srch_data[-1]['time'][5:7])
+            min_day = int(srch_data[-1]['time'][8:10])
+
+            max_year = int(srch_data[0]['time'][:4])
+            max_month = int(srch_data[0]['time'][5:7])
+            max_day = int(srch_data[0]['time'][8:10])
+
+            return (str(srch_data),
+                [dcc.DatePickerSingle(
+                    id='date-picker-start',
+                    clearable=True,
+                    day_size=32,
+                    number_of_months_shown=1,
+                    placeholder='Start date',
+                    min_date_allowed=date(min_year, min_month, min_day),
+                    max_date_allowed=date(max_year, max_month, max_day),
+                    initial_visible_month=date(min_year, min_month, min_day),
+                    date=date(min_year, min_month, min_day)),
+                    dcc.DatePickerSingle(
+                        id='date-picker-end',
+                        clearable=True,
+                        day_size=32,
+                        number_of_months_shown=1,
+                        placeholder='End date',
+                        min_date_allowed=date(min_year, min_month, min_day),
+                        max_date_allowed=date(max_year, max_month, max_day),
+                        initial_visible_month=date(max_year, max_month, max_day),
+                        date=date(max_year, max_month, max_day)),
+                    html.Button('UPDATE DATES', id='update-dates-btn', className='update_dates_btn')],
                 dcc.Dropdown(
                     options=options,
                     multi=True,
@@ -146,20 +183,87 @@ def enable_filtering(data_json, filename):
                     placeholder='Enter your black list of words (please separate them by comma)',
                     style={'width': '50%', 'height': '100px', 'fontSize': '15px'},
                     spellCheck=True
-                ),html.Img(src='/assets/tooltip.png',
-                           id='tltip1',
-                           className='tltip'),
-                dbc.Tooltip('Please note that the queries containing your black-list of words '
-                            'will still appear in the search bar but will be removed from the '
-                            'final list.',
-                            target='tltip1')],
+                ), html.Img(src='/assets/tooltip.png',
+                            id='tltip1',
+                            className='tltip'),
+                    dbc.Tooltip('Please note that the queries containing your black-list of words '
+                                'will still appear in the search bar but will be removed from the '
+                                'final list.',
+                                target='tltip1')],
                 html.Button(id='to-step3-btn', className='to_step3_btn', children='Proceed to the next step')
             )
+        else:
+            raise PreventUpdate
     else:
         raise PreventUpdate
 
 
-@app.callback(Output('intermediate-value', 'children'),
+@app.callback([Output('search-bar', 'children'),
+               Output('intermediate-value-0', 'children'),
+               Output('to-step3-btn', 'children'),
+               Output('unmatched-words-notice','children'),
+               Output('step3-text', 'children'),
+               Output('filtered-queries', 'children'),
+               Output('proceed-to-step4', 'children'),
+               Output('step4-text', 'children')],
+              [Input('update-dates-btn', 'n_clicks')],
+              [State('date-picker-start', 'date'),
+               State('date-picker-end', 'date'),
+               State('intermediate-value-1','children'),
+               State('intermediate-value-0','children')])
+def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, saved_data):
+    if start_date is not None and end_date is not None:
+
+        print(start_date)
+        print(end_date)
+
+        start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+
+        if end_date_dt > start_date_dt:
+            srch_date = [e for e in searched_data
+                         if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt]
+
+            options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],
+                        'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
+                        for i, e in enumerate(srch_date)]
+
+            values = []
+            if srch_bar_selected is not None and len(eval(srch_bar_selected))>0:
+                ids = sorted(eval(srch_bar_selected))
+                print('IDS',ids)
+                k = 0
+                j = 0
+                for i, e in enumerate(eval(saved_data)):
+                    if i == ids[j]:
+                        j = min(j+1, len(ids)-1)
+                        if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
+                            values.append(e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(k))
+                            k+=1
+                    else:
+                        if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
+                            k+=1
+
+            return (dcc.Dropdown(
+                        options=options,
+                        multi=True,
+                        value=values,
+                        clearable=True,
+                        id='drop-down'),
+                    str(srch_date),
+                    'Proceed to the next step',
+                    None,
+                    None,
+                    None,
+                    None,
+                    None)
+        else:
+            pass  # TODO: say that input is invalid date
+    else:
+        raise PreventUpdate
+
+
+@app.callback(Output('intermediate-value-1', 'children'),
               [Input('drop-down', 'value')])
 def save_search_bar_removed_queries(queries):
     if queries is not None:
@@ -201,76 +305,78 @@ def display_step2_instructions(data_json, filename):
                Output('proceed-to-step4', 'children'),
                Output('unmatched-words-notice', 'children')],
               [Input('to-step3-btn', 'n_clicks')],
-              [State('intermediate-value', 'children'),
-               State('black-list-words-txt', 'value')])
-def display_step3(n_clicks, queries_tbr, black_list_text):
+              [State('intermediate-value-1', 'children'),
+               State('black-list-words-txt', 'value'),
+               State('intermediate-value-0','children')])
+def display_step3(n_clicks, queries_tbr, black_list_text, data):
     if n_clicks is not None:
-        indices = []
-        queries_tbs = [(e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '\n')
-                       for e in searched_data]
-        queries_tbs_dlc = queries_tbs.copy()
 
-        # print(queries_tbs[:5])
+        srch_data = eval(data)
+        if len(srch_data)>0:
+            indices = []
+            queries_tbs = [(e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '\n')
+                           for e in srch_data]
+            queries_tbs_dlc = queries_tbs.copy()
 
-        if queries_tbr is not None:
-            queries_tbr = eval(queries_tbr)
-            indices += queries_tbr.copy()
-            # print(queries_tbr)
-            if len(queries_tbr) > 0:
-                queries_tbs = [e for i, e in enumerate(queries_tbs) if i not in queries_tbr]
+            if queries_tbr is not None:
+                queries_tbr = eval(queries_tbr)
+                indices += queries_tbr.copy()
+                if len(queries_tbr) > 0:
+                    queries_tbs = [e for i, e in enumerate(queries_tbs) if i not in queries_tbr]
 
-        matched = set()
-        unmatched = set()
-        if black_list_text is not None:
-            bl = set([e.strip().lower() for e in black_list_text.split(',') if e.strip().lower()])
-            print('#######', bl)
-            if len(bl) > 0:
-                for w in bl:
-                    for q in queries_tbs:
-                        if w in [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')]:
-                            matched.add(w)
-                            break
+            matched = set()
+            unmatched = set()
+            if black_list_text is not None:
+                bl = set([e.strip().lower() for e in black_list_text.split(',') if e.strip().lower()])
+                if len(bl) > 0:
+                    for w in bl:
+                        for q in queries_tbs:
+                            if w in [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')]:
+                                matched.add(w)
+                                break
 
-                unmatched = bl - matched
-                queries_tbs = [q for q in queries_tbs
-                               if not any(
-                        i in bl for i in
-                        [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
-                l = [j for j, q in enumerate(queries_tbs_dlc)
-                     if any(
-                        i in bl for i in
-                        [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
-                indices += l
+                    unmatched = bl - matched
+                    queries_tbs = [q for q in queries_tbs
+                                   if not any(
+                            i in bl for i in
+                            [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
+                    l = [j for j, q in enumerate(queries_tbs_dlc)
+                         if any(
+                            i in bl for i in
+                            [e.strip('!"#$%&\'(),./:;<=>?@[\]^_`{|}~').lower() for e in q[20:-1].split(' ')])]
+                    indices += l
 
-        queries_tbs[-1] = queries_tbs[-1][:-1]
-        n_removed = len(searched_data) - len(queries_tbs)
+            queries_tbs[-1] = queries_tbs[-1][:-1]
+            n_removed = len(searched_data) - len(queries_tbs)
 
-        text = ''
-        if len(unmatched) > 0:
-            text = 'The word(s) {' + ",".join(list(unmatched)) + '} did not match any query.'
+            text = ''
+            if len(unmatched) > 0:
+                text = 'The word(s) {' + ",".join(list(unmatched)) + '} did not match any query.'
 
-        return (
-            [
-                html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
-                html.P(children='Below is the filtered list of your queries after your manual review. '
-                                'In total, ' + str(n_removed) + ' queries have been removed resulting in'
-                                                                ' ' + str(
-                    len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries. '
-                    'If you would like to remove some more queries, you can use the tools '
-                    'provided in Step 2 and then click on the "Update" button to see the new updated list of '
-                    'your queries.')
-            ],
-            dcc.Textarea(
-                value=''.join(queries_tbs),
-                style={'width': '100%', 'height': '300px', 'fontSize': '15px'},
-                disabled=True,
-                id='queries-tbs-txtarea'
-            ),
-            str(list(set(indices))),
-            'Update',
-            html.Button(id='to-step4-btn', className='to_step4_btn', children='I am happy with my list'),
-            text
-        )
+            return (
+                [
+                    html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
+                    html.P(children='Below is the filtered list of your queries after your manual review. '
+                                    'In total, ' + str(n_removed) + ' queries have been removed resulting in'
+                                                                    ' ' + str(
+                        len(queries_tbs)) + ' out of the original ' + str(len(searched_data)) + ' queries. '
+                                                                                                'If you would like to remove some more queries, you can use the tools '
+                                                                                                'provided in Step 2 and then click on the "Update" button to see the new updated list of '
+                                                                                                'your queries.')
+                ],
+                dcc.Textarea(
+                    value=''.join(queries_tbs),
+                    style={'width': '100%', 'height': '300px', 'fontSize': '15px'},
+                    disabled=True,
+                    id='queries-tbs-txtarea'
+                ),
+                str(list(set(indices))),
+                'Update',
+                html.Button(id='to-step4-btn', className='to_step4_btn', children='I am happy with my list'),
+                text
+            )
+        else:
+            pass # TODO: say that no data is selected
     else:
         raise PreventUpdate
 
@@ -305,16 +411,16 @@ def display_confirm(n_clicks, _):
                Output('submission-loading', 'children'),
                Output('please-wait-txt', 'children')],
               [Input('confirm', 'submit_n_clicks')],
-              [State('intermediate-value-2', 'children')])
-def submit_reviewed_data(n_clicks, queries_tbr):
+              [State('intermediate-value-2', 'children'),
+               State('intermediate-value-0', 'children')])
+def submit_reviewed_data(n_clicks, queries_tbr, data):
     if n_clicks is not None:
-        # print('n_clicks: ',n_clicks)
+        srch_data = eval(data)
         if queries_tbr is not None:
             queries_tbr = eval(queries_tbr)
-            # print(queries_tbr)
-            final_data = [e for i, e in enumerate(searched_data) if i not in queries_tbr]
+            final_data = [e for i, e in enumerate(srch_data) if i not in queries_tbr]
         else:
-            final_data = searched_data
+            final_data = srch_data
 
         r = requests.post('http://51.158.119.80:80/', json=final_data)
         if r.text == 'successful':

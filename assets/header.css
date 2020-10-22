@@ -25,6 +25,33 @@ p.proj_desc {
     text-align: center;
 }
 
+.date_picker_container {
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-bottom: 20px;
+    font-size: 10px;
+}
+
+.DateInput_input {
+    font-size: 16px;
+}
+
+.update_dates_btn {
+    display: inline-block;
+    background-color: white;
+    border: 2px solid #209CEE;
+    margin-left: 10px;
+    padding: 8px 16px;
+    color: black;
+    transition-duration: 0.4s;
+    cursor: pointer;
+}
+
+.update_dates_btn:hover {
+    background-color: #209CEE;
+    color: white;
+}
+
 .search_bar {
     padding-left: 20px;
     padding-right: 20px;
