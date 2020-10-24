@@ -214,8 +214,8 @@ def enable_filtering(data_json, filename):
 def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, saved_data):
     if start_date is not None and end_date is not None:
 
-        print(start_date)
-        print(end_date)
+        # print(start_date)
+        # print(end_date)
 
         start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
@@ -228,13 +228,27 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
                         'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
                         for i, e in enumerate(srch_date)]
 
+            # print(options)
+
             values = []
             if srch_bar_selected is not None and len(eval(srch_bar_selected))>0:
                 ids = sorted(eval(srch_bar_selected))
-                print('IDS',ids)
+                # print('IDS',ids)
+
+                saved_data = eval(saved_data)
+
                 k = 0
+                thr = saved_data[0]['time'][:10]
+                if len(srch_date)>0 and datetime.strptime(srch_date[0]['time'][:10], '%Y-%m-%d')>datetime.strptime(thr, '%Y-%m-%d'):
+                    for elem in srch_date:
+                        if elem['time'][:10]!=thr:
+                            k+=1
+                        else:
+                            break
+
                 j = 0
-                for i, e in enumerate(eval(saved_data)):
+
+                for i, e in enumerate(saved_data):
                     if i == ids[j]:
                         j = min(j+1, len(ids)-1)
                         if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
@@ -244,6 +258,7 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
                         if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
                             k+=1
 
+            # print(values)
             return (dcc.Dropdown(
                         options=options,
                         multi=True,
@@ -293,7 +308,7 @@ def display_step2_instructions(data_json, filename):
                                   'In addition, the search bar allows you to type words/phrases (e.g. specific dates, keywords) and '
                                   'find the matching queries. Furthermore, you have the option to type your \'black list of words\' (see the box provided '
                                   'under the search bar) to remove all queries containing these words right away. '
-                                  'Lasly, if for whatever reason you want to review and share only part of your search history data '
+                                  'Lastly, if for whatever reason you want to review and share only part of your search history data '
                                   'you can update the date range using the datepickers provided below (default range covers your whole search history).')
         ])
     else:
@@ -422,7 +437,7 @@ def submit_reviewed_data(n_clicks, queries_tbr, data):
         else:
             final_data = srch_data
 
-        r = requests.post('http://51.158.119.80:80/', json=final_data)
+        r = requests.post('http://51.158.119.80:8080/', json=final_data)
         if r.text == 'successful':
             download_folder_path = str(os.path.join(Path.home(), "Downloads"))
             Path(download_folder_path).mkdir(parents=True, exist_ok=True)
