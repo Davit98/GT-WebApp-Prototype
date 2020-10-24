@@ -176,6 +176,7 @@ def enable_filtering(data_json, filename):
                 dcc.Dropdown(
                     options=options,
                     multi=True,
+                    placeholder='Search and select...',
                     clearable=True,
                     id='drop-down'),
                 [dcc.Textarea(
@@ -262,6 +263,7 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
             return (dcc.Dropdown(
                         options=options,
                         multi=True,
+                        placeholder='Search and select...',
                         value=values,
                         clearable=True,
                         id='drop-down'),
