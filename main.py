@@ -29,6 +29,7 @@ app.layout = html.Div([
     html.Div(id='intermediate-value-0', style={'display': 'none'}),
     html.Div(id='intermediate-value-1', style={'display': 'none'}),
     html.Div(id='intermediate-value-2', style={'display': 'none'}),
+    dcc.Store(id='whole-search-data-stored',storage_type='memory'),
     html.Div(
         children=[
             html.H1(children='Welcome to our study!', className='title'),
@@ -115,7 +116,6 @@ def parse_data(data_json, filename):
     decoded = base64.b64decode(content)
     try:
         if filename.endswith('.json'):
-            global searched_data
             data = json.load(io.StringIO(decoded.decode('utf-8')))
             searched_data = [e for e in data if e['title'][0] == 'S']
             return searched_data
@@ -128,7 +128,8 @@ def parse_data(data_json, filename):
         ])
 
 
-@app.callback([Output('intermediate-value-0','children'),
+@app.callback([Output('whole-search-data-stored','data'),
+               Output('intermediate-value-0','children'),
                Output('date-picker-container', 'children'),
                Output('search-bar', 'children'),
                Output('black-list-of-words', 'children'),
@@ -151,7 +152,8 @@ def enable_filtering(data_json, filename):
             max_month = int(srch_data[0]['time'][5:7])
             max_day = int(srch_data[0]['time'][8:10])
 
-            return (str(srch_data),
+            return (srch_data,
+                    str(srch_data),
                 [dcc.DatePickerSingle(
                     id='date-picker-start',
                     clearable=True,
@@ -210,9 +212,10 @@ def enable_filtering(data_json, filename):
               [Input('update-dates-btn', 'n_clicks')],
               [State('date-picker-start', 'date'),
                State('date-picker-end', 'date'),
+               State('whole-search-data-stored','data'),
                State('intermediate-value-1','children'),
                State('intermediate-value-0','children')])
-def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, saved_data):
+def display_date_picker_updates(_, start_date, end_date, whole_searched_data, srch_bar_selected, saved_data):
     if start_date is not None and end_date is not None:
 
         # print(start_date)
@@ -222,7 +225,7 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
         end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
 
         if end_date_dt > start_date_dt:
-            srch_date = [e for e in searched_data
+            srch_date = [e for e in whole_searched_data
                          if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt]
 
             options = [{'label': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:],
@@ -326,8 +329,9 @@ def display_step2_instructions(data_json, filename):
               [Input('to-step3-btn', 'n_clicks')],
               [State('intermediate-value-1', 'children'),
                State('black-list-words-txt', 'value'),
-               State('intermediate-value-0','children')])
-def display_step3(n_clicks, queries_tbr, black_list_text, data):
+               State('intermediate-value-0','children'),
+               State('whole-search-data-stored','data')])
+def display_step3(n_clicks, queries_tbr, black_list_text, data, whole_searched_data):
     if n_clicks is not None:
 
         srch_data = eval(data)
@@ -366,7 +370,7 @@ def display_step3(n_clicks, queries_tbr, black_list_text, data):
                     indices += l
 
             queries_tbs[-1] = queries_tbs[-1][:-1]
-            n_removed = len(searched_data) - len(queries_tbs)
+            n_removed = len(whole_searched_data) - len(queries_tbs)
 
             text = ''
             if len(unmatched) > 0:
@@ -377,7 +381,7 @@ def display_step3(n_clicks, queries_tbr, black_list_text, data):
                     html.H2(children='Step 3: Reviewing the list of queries to be submitted'),
                     dcc.Markdown('''Below is the filtered list of your queries after your manual review. In total, **''' +
                                  str(n_removed) + '''** queries have been removed resulting in **''' +  str(len(queries_tbs)) +
-                                 '''** out of the original **''' + str(len(searched_data)) + '''** queries. ''' +
+                                 '''** out of the original **''' + str(len(whole_searched_data)) + '''** queries. ''' +
                                  '''If you would like to remove some more queries, you can use the tools provided ''' +
                                  '''in Step 2 and then click on the "Update" button to see the new updated list of your queries.''')
                 ],
