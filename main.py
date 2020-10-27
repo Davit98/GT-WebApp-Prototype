@@ -450,7 +450,7 @@ def submit_reviewed_data(n_clicks, queries_tbr, data):
             return (html.Div(children=[html.Img(src='/assets/submission_successful.png'),
                                        html.P(['Thank you!',
                                                html.Br(),
-                                               'The file has been successfully uploaded and saved to the downloads folder for your record.',
+                                               dcc.Markdown('The file has been successfully uploaded and saved to **' + save_path + '** for your record.'),
                                                ],
                                               className='submitted')], className='submission_block'), [], [])
         else:
