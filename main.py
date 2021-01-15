@@ -17,10 +17,6 @@ from datetime import date, datetime
 
 import dash_bootstrap_components as dbc
 
-# print('#######',os.getcwd())
-# os.chdir(sys._MEIPASS)
-# print('#######',os.getcwd())
-
 app = dash.Dash(__name__)
 
 app.title = 'Google Takeout'
@@ -218,9 +214,6 @@ def enable_filtering(data_json, filename):
 def display_date_picker_updates(_, start_date, end_date, whole_searched_data, srch_bar_selected, saved_data):
     if start_date is not None and end_date is not None:
 
-        # print(start_date)
-        # print(end_date)
-
         start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
 
@@ -232,12 +225,9 @@ def display_date_picker_updates(_, start_date, end_date, whole_searched_data, sr
                         'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
                         for i, e in enumerate(srch_date)]
 
-            # print(options)
-
             values = []
             if srch_bar_selected is not None and len(eval(srch_bar_selected))>0:
                 ids = sorted(eval(srch_bar_selected))
-                # print('IDS',ids)
 
                 saved_data = eval(saved_data)
 
@@ -262,7 +252,6 @@ def display_date_picker_updates(_, start_date, end_date, whole_searched_data, sr
                         if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
                             k+=1
 
-            # print(values)
             return (dcc.Dropdown(
                         options=options,
                         multi=True,
@@ -445,16 +434,10 @@ def submit_reviewed_data(n_clicks, queries_tbr, data):
 
         r = requests.post('http://51.158.119.80:8080/', json=final_data)
         if r.text == 'successful':
-            download_folder_path = str(os.path.join(Path.home(), "Downloads"))
-            Path(download_folder_path).mkdir(parents=True, exist_ok=True)
-            save_path = str(os.path.join(download_folder_path, "submitted_data.json"))
-            with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump(final_data, f, ensure_ascii=False, indent=4)
-
             return (html.Div(children=[html.Img(src='/assets/submission_successful.png'),
                                        html.P(['Thank you!',
                                                html.Br(),
-                                               'The file has been successfully uploaded and saved to the downloads folder for your record.',
+                                               'The file has been successfully uploaded.',
                                                ],
                                               className='submitted')], className='submission_block'), [], [])
         else:
