@@ -14,9 +14,10 @@ For installing the necessary python libraries you can just run ```pip install -r
 
 #### How to generate the local apps?
 
-1. ```pip install pyinstaller```
-2. ```pyinstaller --onefile main.py```
-3. A file named *main.spec* will be generated. Edit the file by adding the following lines:
+1. Add ```os.chdir(sys._MEIPASS)``` to the *main.py* right after library imports.
+2. Run ```pip install pyinstaller```
+3. Run ```pyinstaller --onefile main.py```
+4. A file named *main.spec* will be generated. Edit the file by adding the following lines:
 
 **datas**=[('assets/header.css', 'assets'),
 ('assets/submission_successful.png', 'assets'),
@@ -29,8 +30,8 @@ For installing the necessary python libraries you can just run ```pip install -r
 ('PATH_TO_YOUR_DASH_BOOTSTRAP_COMPONENTS_PACKAGE','dash_bootstrap_components')],
 **hiddenimports**=['_cffi_backend']
 
-4. ```pyinstaller main.spec```
-5. Access the standalone executable file in the folder *dist/*.
+5. Run ```pyinstaller main.spec```
+6. Access the standalone executable file in the folder *dist/*.
 
 #### Backend
 There is a small backend to the website, written in flask, which basically consists of a single POST request endpoint. Through the endpoint the submitted json files from the frotnend are received and saved to the server. Each submitted file is given a unique 32-character hexadecimal string id. The backend code can be accessed via the path /var/www/webAppGT/webAppGT/\__init__.py in the server.
