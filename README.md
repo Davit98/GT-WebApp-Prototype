@@ -14,8 +14,21 @@ For installing the necessary python libraries you can just run ```pip install -r
 
 #### How to generate the local apps?
 
-1. pip install pyinstaller
-2. 
+1. ```pip install pyinstaller```
+2. ```pyinstaller --onefile main.py```
+3. A file named *main.spec* will be generated. Edit the file by adding the following:
 
+**datas**=[('assets/header.css', 'assets'),
+('assets/submission_successful.png', 'assets'),
+('assets/smth_went_wrong.png', 'assets'),
+('assets/tooltip.png', 'assets'),
+('assets/favicon.ico','assets'),
+('PATH_TO_YOUR_DASH_CORE_COMPONENTS_PACKAGE','dash_core_components'),
+('PATH_TO_YOUR_DASH_HTML_COMPONENTS_PACKAGE','dash_html_components'),
+('PATH_TO_YOUR_DASH_RENDERER_PACKAGE','dash_renderer'),
+('PATH_TO_YOUR_DASH_BOOTSTRAP_COMPONENTS_PACKAGE','dash_bootstrap_components')],
+**hiddenimports**=['_cffi_backend']
 
+4. ```pyinstaller main.spec```
+5. Access the standalone executable file in the folder *dist/*.
 
