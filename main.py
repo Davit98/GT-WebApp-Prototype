@@ -17,10 +17,6 @@ from datetime import date, datetime
 
 import dash_bootstrap_components as dbc
 
-# print('#######',os.getcwd())
-# os.chdir(sys._MEIPASS)
-# print('#######',os.getcwd())
-
 app = dash.Dash(__name__)
 
 app.title = 'Google Takeout'
@@ -215,9 +211,6 @@ def enable_filtering(data_json, filename):
 def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, saved_data):
     if start_date is not None and end_date is not None:
 
-        # print(start_date)
-        # print(end_date)
-
         start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
 
@@ -229,15 +222,10 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
                         'value': e['time'][:10] + ', ' + e['time'][11:16] + ' : ' + e['title'][13:] + '_' + str(i)}
                         for i, e in enumerate(srch_date)]
 
-            # print(options)
-
             values = []
             if srch_bar_selected is not None and len(eval(srch_bar_selected))>0:
                 ids = sorted(eval(srch_bar_selected))
-                # print('IDS',ids)
-
                 saved_data = eval(saved_data)
-
                 k = 0
                 thr = saved_data[0]['time'][:10]
                 if len(srch_date)>0 and datetime.strptime(srch_date[0]['time'][:10], '%Y-%m-%d')>datetime.strptime(thr, '%Y-%m-%d'):
@@ -259,7 +247,6 @@ def display_date_picker_updates(_, start_date, end_date, srch_bar_selected, save
                         if start_date_dt <= datetime.strptime(e['time'][:10], '%Y-%m-%d') <= end_date_dt:
                             k+=1
 
-            # print(values)
             return (dcc.Dropdown(
                         options=options,
                         multi=True,
@@ -329,7 +316,6 @@ def display_step2_instructions(data_json, filename):
                State('intermediate-value-0','children')])
 def display_step3(n_clicks, queries_tbr, black_list_text, data):
     if n_clicks is not None:
-
         srch_data = eval(data)
         if len(srch_data)>0:
             indices = []
@@ -392,8 +378,6 @@ def display_step3(n_clicks, queries_tbr, black_list_text, data):
                 html.Button(id='to-step4-btn', className='to_step4_btn', children='I am happy with my list'),
                 text
             )
-        else:
-            pass # TODO: say that no data is selected
     else:
         raise PreventUpdate
 
